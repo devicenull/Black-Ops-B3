@@ -18,7 +18,7 @@
 #
 # Changelog :
 
-# 2011/01/10 -1.1.1 - Bravo17
+# 2011/01/10 -1.1.0 - Bravo17
 # * Support for cod7 rcon format added 
 #
  

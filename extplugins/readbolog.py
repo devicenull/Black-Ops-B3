@@ -17,7 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # CHANGELOG
-# Initial build 1/2/2011
+# Initial build 1/2/2011 adapted from httpytail.py - 0.1 - by GrosBedo
 
 __author__ = 'Bravo17'
 __version__ = '1.1.1'
@@ -58,7 +58,7 @@ class ReadbologPlugin(b3.plugin.Plugin):
 		"""
 		def http_error_206(self, url, fp, errcode, errmsg, headers, data=None):
 			pass
-		# Ignore access denied as well
+	
 		def http_error_403(self, url, fp, errcode, errmsg, headers, data=None):
 			pass
 
@@ -76,15 +76,27 @@ class ReadbologPlugin(b3.plugin.Plugin):
 		
 		if self.config.has_option('server','bo_logurl'):
 			self._bologurl = self.config.get('server','bo_logurl')
-			self.bot('Using Black Ops URL    : %s\n' % self._bologurl)
+			self.bot('Using Black Ops URL	: %s\n' % self._bologurl)
 			
+		self._rate = 10
+		try:
+			req = urllib2.Request('http://logs.gameservers.com/timeout')
+			f = urllib2.urlopen(req)
+			self._rate = int(f.readlines()[0])
+			f.close()
+		except Exception, e:
+			if hasattr(e, 'reason'):
+				self.error(str(e.reason))
+			if hasattr(e, 'code'):
+				self.error(str(e.code))
+			self.debug(str(e))
+		except IOError, e:
+			if hasattr(e, 'reason'):
+				self.error('Failed to reach the server. Reason : %s' % str(e.reason))
+			if hasattr(e, 'code'):
+				self.error('The server could not fulfill the request. Error code : %s' % str(e.code))
+			self.debug(str(e))
 
-		req = urllib2.Request('http://logs.gameservers.com/timeout')
-		f = urllib2.urlopen(req)
-		self._rate = int(f.readlines()[0])
-		f.close()
-		
-		#self._rate = 10
 		if self._rate <= 10:
 			self._rate=12
 		
@@ -103,63 +115,71 @@ class ReadbologPlugin(b3.plugin.Plugin):
 			self._processing_file = True
 			req = urllib2.Request(self._bologurl)
 			req.headers['Range'] = 'bytes=-10000'
-			req.add_header('User-Agent', 'readbolog/1.0 +tony556(at)comcast.net')
-			DiffURLOpener = self.DiffURLOpener()
-			httpopener = urllib2.build_opener(DiffURLOpener)
-			httpFile = httpopener.open(req)
-			
-			#httpFile = urllib2.urlopen(req)
-			log = httpFile.readlines()
-			
-			if self._firstread:
-				self._lastlinewritten = ''
-				i=-3
-				while (self._lastlinewritten == ''):
-					self._lastlinewritten = log[i]
-					i=i-1
 
-				logFile = open(self._outputfile,'a')
-				logFile.write(self._lastlinewritten)
-				self._firstread=False
-				
+			try:
+				DiffURLOpener = self.DiffURLOpener()
+				httpopener = urllib2.build_opener(DiffURLOpener)
+				httpFile = httpopener.open(req)
+				log = httpFile.readlines()
+			except Exception, e:
+				if hasattr(e, 'reason'):
+					self.error(str(e.reason))
+				if hasattr(e, 'code'):
+					self.error(str(e.code))
+				self.debug(str(e))
+			except IOError, e:
+				if hasattr(e, 'reason'):
+					self.error('Failed to reach the server. Reason : %s' % str(e.reason))
+				if hasattr(e, 'code'):
+					self.error('The server could not fulfill the request. Error code : %s' % str(e.code))
+				self.debug(str(e))
 			else:
-			
-				i=0
+				if self._firstread:
+					self._lastlinewritten = ''
+					i=-3
+					while (self._lastlinewritten == ''):
+						self._lastlinewritten = log[i]
+						i=i-1
 
-				while log[i] <> self._lastlinewritten:
+					logFile = open(self._outputfile,'a')
+					logFile.write(self._lastlinewritten)
+					self._firstread=False
+					
+				else:
+					i=0
+					while log[i] <> self._lastlinewritten:
+						i=i+1
+
 					i=i+1
+					line = ''
+					logFile = open(self._outputfile,'a')
+					while i < (len(log)-2):
+						line = log[i]
+						logFile.write(line)
+						i=i+1
+						if line<>'':
+							self._lastlinewritten = line
+					logFile.close()
+					httpFile.close()
 
-				i=i+1
-				line = ''
-
-				logFile = open(self._outputfile,'a')
-				while i < (len(log)-2):
-					line = log[i]
-					logFile.write(line)
-					i=i+1
-					if line<>'':
-						self._lastlinewritten = line
-
-			logFile.close()
-			httpFile.close()
 			self._processing_file = False
 
 if __name__ == '__main__':
-    from b3.fake import fakeConsole
-    from b3.fake import joe
-    
-    p = AdvPlugin(fakeConsole, '@b3/conf/plugin_adv.xml')
-    p.onStartup()
-    
-    p.adv()
-    print "-----------------------------"
-    time.sleep(2)
-    
-    joe._maxLevel = 100
-    joe.says('!advlist')
-    time.sleep(2)
-    joe.says('!advrem 0')
-    time.sleep(2)
-    joe.says('!advrate 1')
-    time.sleep(5)
+	from b3.fake import fakeConsole
+	from b3.fake import joe
+	
+	p = AdvPlugin(fakeConsole, '@b3/conf/plugin_adv.xml')
+	p.onStartup()
+	
+	p.adv()
+	print "-----------------------------"
+	time.sleep(2)
+	
+	joe._maxLevel = 100
+	joe.says('!advlist')
+	time.sleep(2)
+	joe.says('!advrem 0')
+	time.sleep(2)
+	joe.says('!advrate 1')
+	time.sleep(5)
   
