@@ -81,6 +81,7 @@ class ReadbologPlugin(b3.plugin.Plugin):
 		self._rate = 10
 		try:
 			req = urllib2.Request('http://logs.gameservers.com/timeout')
+			req.headers['User-Agent'] = 'B3 %s' % (__version__)
 			f = urllib2.urlopen(req)
 			self._rate = int(f.readlines()[0])
 			f.close()
@@ -115,6 +116,7 @@ class ReadbologPlugin(b3.plugin.Plugin):
 			self._processing_file = True
 			req = urllib2.Request(self._bologurl)
 			req.headers['Range'] = 'bytes=-10000'
+			req.headers['User-Agent'] = 'B3 %s' % (__version__)
 
 			try:
 				DiffURLOpener = self.DiffURLOpener()
